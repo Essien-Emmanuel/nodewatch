@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+/**
+ * A commandline tool to watch and run file
+ */
+
 const fs = require('fs');
 const { spawn } = require('child_process');
 const debounce = require('lodash.debounce');
@@ -8,41 +12,54 @@ const program = require('caporal');
 const colors = require('colors');
 const path = require('path')
 
-const watchFileStartMsg = colors.green('>>>> Nodewatch starting process...'); 
-const watchFileRestartMsg = colors.green('>>>> Nodewatch Restarting process again'); 
+const toolVersion = '0.0.1';
+
+const watchFileStartMsg = (filename) => {
+  console.log(colors.yellow(`nodewatch >>>> ${toolVersion}`))
+  console.log(colors.yellow("nodewatch >>>> to restart at any time, enter 'rs'"))
+  console.log(colors.yellow("nodewatch >>>> watching paths(s): *.*"));
+  console.log(colors.green(`nodewatch >>>> starting 'node ${filename}`));
+}
+
+const watchFileRestartMsg = (filename) => {
+  console.log(colors.green(`starting 'node ${filename}`))
+}; 
+
+/**
+ * 
+ * [nodemon] 3.1.0
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node src/server.js`
+
+ */
 
 const watchFile = (filename) => {
   let $process;
-
+  
   const start = debounce(() => {
+    
     if ($process) {
       $process.kill()
     };
-    console.log(watchFileStartMsg);
+    watchFileStartMsg(filename);
     $process = spawn('node', [filename], { stdio: 'inherit' });
   }, 100);
 
   const absoluteFilePath = path.resolve(filename);
-  console.log('abs path of filename ', absoluteFilePath, 'of ', filename);
   
-  chokidar.watch(process.cwd(), { persistent: true })
-    .on('add', (filePath) => {
-      console.log('filepath ', filePath)
-      if (path.resolve(filePath) === absoluteFilePath) start(filename);
-    })
-    .on('change', (filePath) => {
-      if (path.resolve(filePath) === absoluteFilePath) start(filename);
-    })
-    .on('unlink', (filePath) => {
-      if (path.resolve(filePath) === absoluteFilePath) start(filename);
-    });
+  chokidar.watch(absoluteFilePath)
+  .on('add',  start)
+  .on('change', start)
+  .on('unlink', start);
 }
 
 const watchFileOnRS = (filename) => {
   process.stdin.setEncoding('utf-8');
   process.stdin.on('data', (data) => {
     if (data.trim() === 'rs') {
-      console.log(watchFileRestartMsg);
+      watchFileRestartMsg(filename);
       watchFile(filename);
     }
   })

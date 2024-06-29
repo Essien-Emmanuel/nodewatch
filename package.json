@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "bin": {
-    "watchit": "index.js"
+    "nodewatch": "index.js"
   },
   "dependencies": {
     "caporal": "^1.4.0",
